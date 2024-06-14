@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html>
+<head>
+   <meta charset="utf-8">
+   <meta name="viewport" content="width=device-width, initial-scale=1">
+   <link rel="icon" href="icon.png">
+   <title>test</title>
+   <script src="https://cdn.jsdelivr.net/npm/socket.io-client@4.x.x/dist/socket.io.min.js"></script>
+   <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+</head>
+<body x-data>
+
+server status:
+<svg width="10" height="10">
+  <circle cx="5" cy="5" r="5" :fill="$store.server? 'green': 'red'" />
+</svg>
+
+<div x-data="{a:1}">
+   <button @click="a = 'asdf'">asdf</button>
+   <div x-text="a"></div>
+   <a href="game" x-show="a == 'asdf'">holiwi</a>
+</div>
+
+
+<script>
+   document.addEventListener('alpine:init', () => {
+      Alpine.store('server', false)
+   })
+
+   const sock = io('/lobi');
+
+   sock.on('disconnect', () => {
+      console.log('no hay');
+      Alpine.store('server', false);
+   });
+
+   sock.on('connect', () => {
+      console.log('SI HAY');
+      Alpine.store('server', true);
+   });
+</script>
+
+</body>
+</html>

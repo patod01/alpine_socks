@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html>
+<head>
+   <meta charset="utf-8">
+   <meta name="viewport" content="width=device-width, initial-scale=1">
+   <link rel="icon" href="icon.png">
+   <title>game</title>
+   <script src="https://cdn.jsdelivr.net/npm/socket.io-client@4.x.x/dist/socket.io.min.js"></script>
+   <script defer src="play.js"></script>
+   <script defer src="move.js"></script>
+   <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+</head>
+<body x-data>
+
+<!--! tecnologia -->
+<div> 
+   <div style="display: inline-block;">
+      server status:
+      <svg width="10" height="10">
+        <circle cx="5" cy="5" r="5" :fill="$store.server? 'green': 'red'" />
+      </svg><br>
+      jugador: <span x-text="$store.player"></span>
+   </div>
+
+   <div style="display: inline-block;">
+      <button @click="emit_test">try me!</button>
+      <button @click="location.reload(true)">refresh</button><br>
+      <button @click="sock.emit('pls')">show pls!</button>
+      <button
+         @click="if ($store.server) sock.disconnect(); else sock.connect()"
+         x-text="$store.server? 'desconectar': 'conectar'"
+      ></button>
+   </div>
+</div>
+<br>
+
+
+
+<!--! cuadrao -->
+<template x-for="player in $store.players">
+<div style="display: inline-block; margin: 3px;">
+   <div x-text="player.name"></div>   
+   <div class="player"
+      x-data="{
+         intervals: {x: null, y: null},
+      }"
+      style="background: gray; display: inline-block;"
+   >
+      <template x-if="player.name == $store.player">
+      <span
+         @keydown.window="iniciarTimer($event, player.pos, intervals)"
+         @keyup.window="detenerTimer($event, intervals)"
+      ></span>
+      </template>
+      <div x-text="[player.pos.x, player.pos.y]"></div>
+      <svg width="333" height="333">
+         <rect :x="player.pos.x" :y="player.pos.y" width="80" height="80" fill="blue" />
+      </svg>
+   </div>
+</div>
+</template>
+
+
+
+<script>
+   document.addEventListener('alpine:init', () => {
+      Alpine.store('server', false);
+      Alpine.store('players', []);
+   })
+
+   const sock = io();
+
+   sock.on('connect', () => {
+      console.log('SI SOY', sock.id);
+      Alpine.store('server', true);
+      sock.emit('login', (my_name, players) => {
+         Alpine.store('player', my_name);
+         console.log('my name is', my_name);
+         for (let player in players) {
+            Alpine.store('players').push({
+               name: player,
+               pos: {
+                  x: players[player].pos[0],
+                  y: players[player].pos[1]
+               }
+            });
+         }
+         console.log('other players:', players);
+      })
+   });
+
+   sock.on('disconnect', () => {
+      console.log('no hay conexion');
+      Alpine.store('server', false);
+      Alpine.store(
+         'players',
+         Alpine.store('players')
+            .filter(({name}) => name !== Alpine.store('player'))
+      );
+   });
+</script>
+
+</body>
+</html>
